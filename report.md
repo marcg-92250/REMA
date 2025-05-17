@@ -14,7 +14,23 @@ The KuaiRec 2.0 dataset consists of interactions between users and videos from t
 
 - **User Information**:
   - `user_features.csv` which contains activity-related features and demographics for each user.
+- 
+## Installation
 
+```bash
+python3 -m venv venv
+source venv/bin/activate  # Linux
+# ou
+venv\Scripts\activate     # Windows
+
+pip install -r requirements.txt
+```
+
+## Exécution standard (entraînement complet)
+
+```bash
+python main.py --matrix big_matrix.csv --epochs 200 --test_neg_ratio 99
+```
 ## Approach
 
 ### Labeling Criteria
@@ -55,7 +71,7 @@ This ensures a personalized evaluation per user, making the testing scenario mor
 - **Regularization**: `alpha = 0.0005` for both user and item embeddings.
 - **Max sampled**: 150 negative samples per training step.
 - **Input**: Only user-item interactions (no additional features).
-- **Early stopping**: Patience of 5 to 8 evaluations.
+- **Early stopping**: Patience of 5 to 12 evaluations.
 - **Training duration**: 100 to 300 epochs (configurable).
 
 ## Evaluation Protocol
@@ -77,49 +93,110 @@ The evaluation was performed on the held-out test set for each user.
 
 ### Model Performance Comparison
 
-| Metric        | Baseline   | Improvement  |
-|---------------|------------|--------------|
-| **Precision@5** | 0.5019    | xx.x%        |
-| **Recall@5**    | 0.0223    | xx.x%        |
-| **F1@5**        | 0.0413    | xx.x%        |
-| **Recall@10**   | 0.0390    | xx.x%        |
-| **NDCG@10**     | 0.5684    | xx.x%        |
-
-*Note: The table above will be filled with actual values after running the experiments.*
+- In results_big_matrix_20250517_222312.csv
 
 ### Training Time
 
 - **Small Matrix**:
-  - **Baseline Model**: xx.x seconds
+  - **Baseline Model**: 5464.62 seconds for 320 epoch
 - **Big Matrix**:
-  - **Baseline Model**: xx.x seconds
+  - **Baseline Model**: 7060.04 seconds for 200 epoch
+
+### Output Example
+
+```plaintext
+Using 32 CPU threads
+Data directory: /root/REMA/KuaiRec2.0/data
+
+Loading data from big_matrix.csv...
+Loading item categories...
+Loading user features...
+
+Interaction matrix shape: (12530806, 8)
+Item categories shape: (10728, 2)
+User features shape: (7176, 31)
+
+Deriving implicit labels (watch_ratio >= 0.7)...
+Positive interactions ratio: 0.5147
+
+Filtering users and items with >= 3 positive interactions...
+Counting positive interactions per user and item...
+Applying filtering...
+Original interactions: 12530806
+Filtered interactions: 12523332
+Unique users: 7176
+Unique items: 9923
+Creating user and item mappings...
+
+Splitting data (leave-n-out)...
+Building user interaction dictionaries...
+Processing interactions: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 12523332/12523332 [03:14<00:00, 64255.05it/s]
+Creating train-test split...
+Splitting users: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 7176/7176 [00:25<00:00, 277.47it/s]
+Creating DataFrames and matrices...
+Building sparse matrices...
+Training interactions: 40241339
+Testing interactions: 129259600
+
+==================================================
+Entraînement du modèle de base (LightFM avec perte WARP)
+==================================================
+Évaluation à l'époque 200: 100%|███████████████████████████████████████████████████████████████████████████| 200/200 [1:57:40<00:00, 35.30s/it, train_f1@5=0.0222, test_f1@5=0.0537, best_f1@5=0.0541, no_improv=3]
+
+Temps total d'entraînement : 7060.04 secondes
+
+Métriques finales :
+  Entraînement: {'precision@5': 0.8429487179487181, 'recall@5': 0.0114081144580761, 'f1@5': 0.02223300792954486, 'ndcg@5': 0.958016136758489, 'precision@10': 0.8288043478260869, 'recall@10': 0.022511965983650656, 'f1@10': 0.04281635879994376, 'ndcg@10': 0.9546353339029031, 'precision@20': 0.822463768115942, 'recall@20': 0.044723512915331706, 'f1@20': 0.08137804197841884, 'ndcg@20': 0.951123785419115, 'precision@50': 0.8178651059085842, 'recall@50': 0.11132164698661788, 'f1@50': 0.18092003778826576, 'ndcg@50': 0.9467992814178116, 'item_coverage@10': 0.3963519097047264, 'diversity@10': 0.8045571624918278}
+  Test:         {'precision@5': 0.5814659977703457, 'recall@5': 0.02929703135340489, 'f1@5': 0.053720606887399464, 'ndcg@5': 0.6256436596067969, 'precision@10': 0.5364130434782608, 'recall@10': 0.054644767195430016, 'f1@10': 0.09303855050057137, 'ndcg@10': 0.5849641918474042, 'precision@20': 0.4904194537346711, 'recall@20': 0.09635632678149146, 'f1@20': 0.14602978657044866, 'ndcg@20': 0.542162784288208, 'precision@50': 0.4149609810479376, 'recall@50': 0.18366054783661429, 'f1@50': 0.22052735308676494, 'ndcg@50': 0.4811958429830368, 'item_coverage@10': 0.39111155900433336, 'diversity@10': 0.8041891462546223}
+
+Results saved to results_big_matrix_20250517_222312.csv
+```
 
 ## Conclusions
 
-1. The baseline model's performance was evaluated using several ranking metrics, and it demonstrated consistent results across the Precision, Recall, and F1 scores.
-   
-2. The implemented WARP loss in the matrix factorization model effectively optimized for ranking tasks, making it a suitable choice for implicit feedback scenarios, like video recommendations.
+The model's effectiveness was validated using a variety of ranking metrics, including Precision, Recall, and F1 scores, where it consistently performed well, demonstrating its reliability in multiple evaluation aspects.
 
-3. The data preprocessing and filtering strategy significantly improved the recommendation quality by ensuring that users and items with too few interactions were excluded from training.
+By leveraging WARP (Weighted Approximate-Rank Pairwise) loss in the matrix factorization model, we effectively optimized for ranking tasks, making this approach highly suitable for handling implicit feedback, particularly in video recommendation contexts.
 
-4. The evaluation covered a comprehensive set of metrics, both for accuracy (Precision, Recall, F1, NDCG) and beyond-accuracy measures (Coverage, Diversity), providing a holistic view of the recommendation quality.
+Through rigorous data preprocessing and filtering, we significantly enhanced the quality of recommendations. Specifically, users and items with insufficient interactions were excluded, ensuring that the training data reflected meaningful and reliable patterns.
 
-5. The inclusion of early stopping allowed for optimized training duration without sacrificing performance, ensuring efficient model training.
+The evaluation process was thorough, incorporating both traditional accuracy metrics such as Precision, Recall, and F1, as well as more comprehensive measures like NDCG, Item Coverage, and Diversity, to provide a complete assessment of the model's performance.
 
-6. The careful handling of user and item features during preprocessing, such as the use of scaling for numerical features, prevented overfitting by ensuring that no single feature dominated the model.
+The use of early stopping was instrumental in balancing training efficiency with performance. It helped prevent overfitting while ensuring that the model training process was neither too short nor too long, thereby optimizing computational resources.
+
+Preprocessing steps were carefully designed to handle both user and item features, including robust scaling of numerical data. This strategy prevented overfitting by ensuring that no single feature disproportionately influenced the model’s predictions.
+
 
 ## Future Directions
+Integrating Session-based Recommendations: Develop session-based recommendation systems that focus on users' immediate preferences, leveraging recent interactions to provide more relevant and timely suggestions.
 
-- **Watch Ratio Sensitivity**: Experiment with varying thresholds for the `watch_ratio` to study the effect of different definitions of positive interactions.
-  
-- **Sequential Recommendation**: Incorporate temporal patterns by exploring sequential recommendation models that capture changes in user preferences over time.
+Incorporating Temporal Patterns: Explore sequential recommendation models that can capture how user preferences change over time, adapting recommendations to evolving interests and trends.
 
-- **Session-based Recommendations**: Consider implementing session-based recommendation techniques that capture users' short-term preferences based on recent interactions.
+Refining Watch Ratio Sensitivity: Test various thresholds for the watch_ratio to understand the impact of different definitions of positive interactions on model accuracy and recommendation quality.
 
-- **Neural Network Models**: Explore neural network-based approaches like Neural Collaborative Filtering (NCF) or Variational Autoencoders (VAE) as alternatives to matrix factorization.
+Leveraging Advanced Neural Networks: Experiment with neural network architectures, such as Neural Collaborative Filtering (NCF) and Variational Autoencoders (VAE), to explore their potential advantages over traditional matrix factorization methods.
 
-- **Cross-validation**: Implement cross-validation to assess the model's generalizability and ensure more robust comparison of model variants.
+Cross-validation for Robustness: Implement cross-validation techniques to assess the model’s performance across different subsets of the data, ensuring its reliability and generalizability.
 
-- **Feature Exploration**: Consider incorporating content-based features such as metadata about the videos (e.g., genre, description) to further improve recommendation accuracy.
+Enhancing Recommendations with Content-based Features: Integrate content-based features, such as video genre or description, to refine recommendations, providing more personalized and context-aware suggestions.
 
-- **A/B Testing**: Implement A/B testing to validate the model's effectiveness in real-world environments.
+Real-time Validation through A/B Testing: Conduct A/B testing to evaluate the model's effectiveness in real-world environments, enabling direct comparison between different recommendation strategies and gathering user feedback.
+
+## Project File Structure
+
+Here is a directory tree of the project structure:
+
+```plaintext
+          Length Name
+          ------ ----
+          12989 evaluation.py
+          1437 loaddata.py
+          11669 main.py
+          15129 preprocess.py
+          3602 README.md
+          5820 report.md
+          108 requirements.txt
+          1235 results_big_matrix_20250517_222312.csv
+          617 sujet.md
+          33843 systeme-recommander.ipynb
+```

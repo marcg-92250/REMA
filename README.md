@@ -1,124 +1,80 @@
 # KuaiRec 2.0 Recommender System
 
-Ce projet implémente un système de recommandation à deux étapes pour le dataset KuaiRec 2.0, comparant un modèle de filtrage collaboratif de référence avec un modèle hybride qui incorpore des caractéristiques secondaires.
+Ce projet implémente un système de recommandation basé sur LightFM pour le dataset KuaiRec 2.0. Seul le **modèle de base** (factorisation matricielle avec perte WARP) est désormais pris en charge. Les résultats sont enregistrés au format CSV.
+
+---
 
 ## Installation
 
 ```bash
-# Créer un environnement virtuel Python
+# 1. Créer et activer un environnement virtuel Python
 python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
+source venv/bin/activate     # Linux/Mac
 # ou
-venv\Scripts\activate     # Windows
+venv\Scripts\activate        # Windows
 
-# Installer les dépendances
+# 2. Installer les dépendances
 pip install -r requirements.txt
 ```
 
-## Exécution standard (entraînement complet)
-
-```bash
-python main.py --matrix big_matrix.csv --epochs 200 --test_neg_ratio 99
+## Structure du dataset
+```
+KuaiRec2.0/
+└── data/
+    ├── small_matrix.csv      # ~4.7M interactions (prototype)
+    ├── big_matrix.csv        # ~12.5M interactions (évaluation finale)
+    ├── item_categories.csv   # Catégories de vidéos
+    └── user_features.csv     # Caractéristiques des utilisateurs
 ```
 
-## Choix du modèle à entraîner/évaluer
-
-L'argument `--model` permet de choisir quel modèle exécuter :
-
-- `--model baseline` : entraîne et évalue uniquement le modèle de base (LightFM sans features)
-- `--model hybrid` : entraîne et évalue uniquement le modèle hybride (LightFM avec features)
-- `--model all` : entraîne et compare les deux modèles (par défaut)
-
-Exemple :
+## Usage
+Exécution standard
+Entraînement complet sur big_matrix.csv et sauvegarde des résultats :
 
 ```bash
-python main.py --matrix big_matrix.csv --model hybrid --epochs 200
+python main.py \
+  --matrix big_matrix.csv \
+  --epochs 200 \
+  --eval_every 10 \
+  --test_neg_ratio 99
 ```
+À la fin, un fichier results_<matrix>_<YYYYMMDD_HHMMSS>.csv est créé, contenant pour chaque époque :
 
-## Configuration des threads
+- Precision@5, Recall@5, F1@5
+
+- Precision@10, Recall@10, F1@10
+
+- Precision@20, Recall@20, F1@20
+
+- Precision@50, Recall@50, F1@50
+
+
+Arguments disponibles
+```bash
+--matrix        Fichier d'interactions à utiliser (small_matrix.csv ou big_matrix.csv)
+--epochs        Nombre d’époques d’entraînement (défaut : 300)
+--eval_every    Fréquence d’évaluation en époques (défaut : 10)
+--patience      Patience pour l’arrêt anticipé (défaut : 8)
+--test_neg_ratio Ratio négatif pour évaluation (défaut : 49)
+--fast          Mode rapide (échantillonnage réduit)
+--threads       Nombre de threads à utiliser (par défaut : détection automatique)
+--data_dir      Chemin vers le dossier de données (optionnel)
+--model         Doit être “baseline” (modèle hybride retiré)
+
+```
+Configuration des threads
+Pour forcer un nombre de threads :
 
 ```bash
-# Spécifier manuellement le nombre de threads (utile sur serveurs avec beaucoup de cœurs)
 python main.py --threads 8 --epochs 200
 ```
 
-## Résolution des problèmes courants
 
-- **Erreur de mémoire**: Réduire `test_neg_ratio`
-- **Performance lente**: Augmenter le nombre de threads
-- **Précision insuffisante**: Augmenter `epochs` et `test_neg_ratio`
-
-## Exécution sur différents matériels
-
-### CPU multi-cœurs
-- Augmenter les threads selon les capacités du CPU (4-8 threads généralement optimal)
-- Utiliser `--threads X` où X est ~80% des cœurs disponibles
-
-### Serveur de calcul
-- Utiliser toute la mémoire disponible pour des ratios de test plus élevés
-- Augmenter les threads selon les capacités du serveur
-
-### Machine virtuelle / Cloud
-- Choisir une instance avec plus de vCPUs
-- Ajouter swap si la mémoire est limitée
-- Réduire `test_neg_ratio` pour économiser la mémoire
-
-## Requirements
-
-- Python 3.6+
-- Dependencies listed in `requirements.txt`
-
-## Setup
-
-1. Clone the repository
-2. Set up a virtual environment (recommended)
-3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
+## Structure du projet
 ```
-
-## Dataset Structure
-
-The dataset files should be organized in the following structure:
-
-```
-sys-recommenders/
-  KuaiRec2.0/
-    data/
-      small_matrix.csv         # Interaction data for prototyping (~4.7M rows)
-      big_matrix.csv           # Complete interaction data (~12.5M rows)
-      item_categories.csv      # Item category data
-      user_features.csv        # User feature data
-```
-
-## Running the Pipeline
-
-To run the pipeline with the small matrix (for prototyping):
-
-```bash
-python main.py --matrix small_matrix.csv
-```
-
-To run with the big matrix (for final evaluation):
-
-```bash
-python main.py --matrix big_matrix.csv --model all --epochs 200 --test_neg_ratio 99
-```
-
-### Command Line Arguments
-
-- `--matrix`: Specifies which interaction matrix to use (default: `small_matrix.csv`)
-- `--epochs`: Number of training epochs (default: `200`)
-- `--eval_every`: Evaluate model every N epochs (default: `10`)
-- `--test_neg_ratio`: Negative ratio for evaluation (default: `99`)
-- `--model`: Model to train (`baseline`, `hybrid`, `all`)
-- `--threads`: Number of threads to use
-- `--data_dir`: Custom data directory path (optional, overrides default path)
-
-## Project Structure
-
-- `loaddata.py`: Data loading utilities
-- `preprocess.py`: Data preprocessing functions
-- `evaluation.py`: Evaluation metrics implementation
-- `
+├── loaddata.py
+├── preprocess.py
+├── evaluation.py
+├── main.py
+├── requirements.txt
+└── README.md
